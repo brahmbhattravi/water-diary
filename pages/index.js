@@ -1,7 +1,5 @@
 // pages/index.js
 import React, { useState } from 'react';
-import WaterButton from '../components/WaterButton';
-import Notification from '../components/Notification';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
@@ -21,17 +19,24 @@ export default function Home() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ amount }),
+        body: JSON.stringify({ amount: amount }),
       });
 
-      if (!response.ok) throw new Error('Failed to log water intake');
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to log water intake');
+      }
 
       setNotification({ message: 'Water intake logged successfully!', type: 'success' });
-    } catch (error) {
-      setNotification({ message: 'Failed to log water intake', type: 'error' });
+    } catch (err) {
+      console.error('Error logging water intake:', err);
+      setNotification({ 
+        message: err.message || 'Failed to log water intake', 
+        type: 'error' 
+      });
     }
 
-    // Clear notification after 3 seconds
     setTimeout(() => {
       setNotification({ message: '', type: '' });
     }, 3000);
@@ -42,15 +47,21 @@ export default function Home() {
       <h1>Water Intake Tracker</h1>
       <div className={styles.buttonContainer}>
         {waterAmounts.map((item) => (
-          <WaterButton
+          <button
             key={item.amount}
-            amount={item.amount}
-            color={item.color}
+            className={styles.waterButton}
+            style={{ backgroundColor: item.color }}
             onClick={() => handleWaterLog(item.amount)}
-          />
+          >
+            {item.amount}ml
+          </button>
         ))}
       </div>
-      {notification.message && <Notification message={notification.message} type={notification.type} />}
+      {notification.message && (
+        <div className={`${styles.notification} ${styles[notification.type]}`}>
+          {notification.message}
+        </div>
+      )}
     </div>
   );
 }
