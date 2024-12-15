@@ -7,20 +7,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Format the private key correctly
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY
-      ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      : undefined;
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+
+    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
+      try {
+        privateKey = JSON.parse(privateKey);
+      } catch (e) {
+        privateKey = privateKey.replace(/\\n/g, '\n');
+      }
+    }
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        private_key: privateKey,
+        private_key: privateKey
       },
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      scopes: ['https://www.googleapis.com/auth/spreadsheets']
     });
 
-    // Rest of your code...
     const client = await auth.getClient();
     const googleSheets = google.sheets({ version: 'v4', auth: client });
     const { amount } = req.body;
@@ -32,32 +36,31 @@ export default async function handler(req, res) {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
+      second: '2-digit'
     }).replace(/\//g, '-');
 
-    const values = [[formattedDate, amount]];
-
     await googleSheets.spreadsheets.values.append({
-      auth,
       spreadsheetId: process.env.GOOGLE_SHEET_ID,
       range: 'Sheet1!A:B',
       valueInputOption: 'USER_ENTERED',
       resource: {
-        values: values,
-      },
+        values: [[formattedDate, amount]]
+      }
     });
 
-    return res.status(200).json({
-      success: true,
-      message: 'Successfully logged water intake',
-    });
+    return res.status(200).json({ success: true, message: 'Successfully logged water intake' });
 
   } catch (err) {
-    console.error('Detailed error:', err);
+    console.error('Detailed error:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
+
     return res.status(500).json({
       success: false,
       message: 'Failed to log water intake',
-      error: err.message,
+      error: err.message
     });
   }
 }
