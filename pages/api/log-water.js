@@ -7,15 +7,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
-
-    if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
-      try {
-        privateKey = JSON.parse(privateKey);
-      } catch {
-        privateKey = privateKey.replace(/\\n/g, '\n');
-      }
-    }
+    // Handle the private key differently
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY
+      ? process.env.GOOGLE_PRIVATE_KEY.split(String.raw`\n`).join('\n')
+      : '';
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
