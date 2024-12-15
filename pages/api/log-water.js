@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     if (!privateKey.includes('-----BEGIN PRIVATE KEY-----')) {
       try {
         privateKey = JSON.parse(privateKey);
-      } catch (e) {
+      } catch {
         privateKey = privateKey.replace(/\\n/g, '\n');
       }
     }
